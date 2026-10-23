@@ -9,6 +9,7 @@ using backend.Data;
 // Imports the namespace for AppDbContext, allowing us to access
 // the database using EF Core.
 
+using backend.DTOs;
 using backend.Models;
 // Imports the namespace containing the Employee model class.
 
@@ -36,18 +37,18 @@ namespace backend.Controllers
 
         // GET: api/employees
         [HttpGet]
-        public async Task<ActionResult<List<Employee>>> GetEmployees()
+        public async Task<ActionResult<List<EmployeeResponseDto>>> GetEmployees()
         {
             var employees = await _context.Employees.ToListAsync();
             // Retrieves records from the database and converts them into a C# list.
 
-            return Ok(employees);
+            return Ok(employees.Select(ToResponseDto).ToList());
         }
 
 
         // GET: api/employees/1
         [HttpGet("{id}")]
-        public async Task<ActionResult<Employee>> GetEmployee(int id)
+        public async Task<ActionResult<EmployeeResponseDto>> GetEmployee(int id)
         {
             // Finds the employee using the ID from the URL.
             var employee = await _context.Employees.FindAsync(id);
@@ -59,14 +60,24 @@ namespace backend.Controllers
             }
 
             // Returns HTTP 200 OK with the employee details.
-            return Ok(employee);
+            return Ok(ToResponseDto(employee));
         }
 
 
         // POST: api/employees
         [HttpPost]
-        public async Task<ActionResult<Employee>> CreateEmployee(Employee employee)
+        public async Task<ActionResult<EmployeeResponseDto>> CreateEmployee(EmployeeRequestDto request)
         {
+            // Map API input to a new database entity. The client does not supply an ID.
+            var employee = new Employee
+            {
+                FullName = request.FullName,
+                Email = request.Email,
+                Department = request.Department,
+                JobTitle = request.JobTitle,
+                IsActive = request.IsActive
+            };
+
             // Removes unnecessary spaces from the email address.
             employee.Email = employee.Email.Trim();
 
@@ -93,7 +104,7 @@ namespace backend.Controllers
             return CreatedAtAction(
                 nameof(GetEmployee),
                 new { id = employee.Id },
-                employee
+                ToResponseDto(employee)
             );
             // Returns HTTP 201 Created with the newly created employee.
             // The Location header points to GET /api/employees/{id}.
@@ -102,7 +113,7 @@ namespace backend.Controllers
 
         // PUT: api/employees/1
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateEmployee(int id, Employee updatedEmployee)
+        public async Task<IActionResult> UpdateEmployee(int id, EmployeeRequestDto updatedEmployee)
         {
             // Finds the existing employee using the ID from the URL.
             var employee = await _context.Employees.FindAsync(id);
@@ -145,6 +156,20 @@ namespace backend.Controllers
             return NoContent();
         }
 
+
+        // Explicitly select which entity fields are exposed by the API.
+        private static EmployeeResponseDto ToResponseDto(Employee employee)
+        {
+            return new EmployeeResponseDto
+            {
+                Id = employee.Id,
+                FullName = employee.FullName,
+                Email = employee.Email,
+                Department = employee.Department,
+                JobTitle = employee.JobTitle,
+                IsActive = employee.IsActive
+            };
+        }
 
         // DELETE: api/employees/1
         [HttpDelete("{id}")]
