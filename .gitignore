@@ -4,6 +4,9 @@
 .vscode/
 .env
 .env.*
+!.env.example
+**/dist/
+TestResults/
 *.user
 *.suo
 node_modules/

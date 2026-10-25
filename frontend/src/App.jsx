@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import "./App.css";
 
 // Address of our ASP.NET Core backend API.
-const API_URL = "http://localhost:5000/api/employees";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api/employees";
 
 // Creates a fresh form with default values.
 function createEmptyForm() {

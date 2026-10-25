@@ -31,13 +31,24 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 var app = builder.Build();
 
+// Compose enables this after SQL Server reports that it is ready.
+if (builder.Configuration.GetValue<bool>("Database:ApplyMigrations"))
+{
+    using var scope = app.Services.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    context.Database.Migrate();
+}
+
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();//Tell ASP.Net core to use HTTPS if available
+if (!builder.Configuration.GetValue<bool>("HttpOnly"))
+{
+    app.UseHttpsRedirection();
+}
 
 // Apply the React CORS policy to incoming HTTP requests
 app.UseCors("ReactApp");
@@ -47,3 +58,6 @@ app.UseAuthorization();//It enforces authorization rules that we've configured.
 app.MapControllers();//Map incoming requests to the appropriate controller based on the route and http method
 
 app.Run();//Starts our ASP.NET core application
+
+// Allows the integration tests to start this application in a test server.
+public partial class Program { }
