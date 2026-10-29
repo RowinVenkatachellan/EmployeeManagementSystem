@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 // Defines which HTTP requests a method handles.
 
 using Microsoft.EntityFrameworkCore;
-
+using backend.Services;
 using backend.Data;
 // Imports the namespace for AppDbContext, allowing us to access
 // the database using EF Core.
@@ -20,11 +20,15 @@ namespace backend.Controllers
     public class EmployeesController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly EmployeeExcelService _excelService;
 
         // Constructor
-        public EmployeesController(AppDbContext context)
+        public EmployeesController(
+            AppDbContext context,
+            EmployeeExcelService excelService)
         {
             _context = context;
+            _excelService = excelService;
         }
 
         // Defines an API controller that handles requests sent to /api/employees.
@@ -43,6 +47,27 @@ namespace backend.Controllers
             // Retrieves records from the database and converts them into a C# list.
 
             return Ok(employees.Select(ToResponseDto).ToList());
+        }
+
+
+        [HttpGet("export")]
+        public async Task<IActionResult> ExportEmployees()
+        {
+            // Retrieve employees from SQL Server without tracking them.
+            var employees = await _context.Employees
+                .AsNoTracking()
+                .OrderBy(e => e.Id)
+                .ToListAsync();
+
+            // Generate an Excel workbook using the retrieved employees.
+            byte[] excelBytes = _excelService.GenerateExcel(employees);
+
+            // Return the workbook as a downloadable Excel file.
+            return File(
+                excelBytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "Employees.xlsx"
+            );
         }
 
 

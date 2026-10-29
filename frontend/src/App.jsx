@@ -27,6 +27,7 @@ function Icon({ name }) {
     edit: <path d="m15 4 5 5M4 16 16 4a2 2 0 0 1 4 4L8 20l-5 1Z"/>,
     trash: <path d="M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7"/>,
     arrow: <path d="m9 5 7 7-7 7"/>,
+    download: <><path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4"/></>,
   };
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
 }
@@ -60,6 +61,10 @@ function App() {
 
   // Stores what the user types into the search bar.
   const [search, setSearch] = useState("");
+
+  // Tracks whether an Excel download is in progress.
+  // Prevents repeated download requests.
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // =========================
   // 2. RETRIEVE EMPLOYEES
@@ -277,6 +282,56 @@ function App() {
   }
 
   // =========================
+  // DOWNLOAD EMPLOYEES AS EXCEL
+  // =========================
+
+  // Requests the latest employee records as an Excel file.
+  async function handleDownloadExcel() {
+    if (isDownloading) return;
+
+    setError("");
+    setIsDownloading(true);
+
+    let downloadUrl = null;
+
+    try {
+      // Request Excel from our existing ASP.NET Core API.
+      const response = await fetch(`${API_URL}/export`);
+
+      if (!response.ok) {
+        throw new Error("Failed to download Excel file.");
+      }
+
+      // Convert the binary response into a downloadable Blob.
+      const blob = await response.blob();
+
+      // Create a temporary URL pointing to the Excel data.
+      downloadUrl = URL.createObjectURL(blob);
+
+      // Create a temporary link to trigger the browser download.
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = "Employees.xlsx";
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+    } catch (err) {
+      // Display an error if the request or download fails.
+      setError(err.message || "An unexpected error occurred.");
+
+    } finally {
+      // Release the temporary URL and reset download state.
+      if (downloadUrl) {
+        URL.revokeObjectURL(downloadUrl);
+      }
+
+      setIsDownloading(false);
+    }
+  }
+
+  // =========================
   // 8. SEARCH EMPLOYEES
   // =========================
 
@@ -350,6 +405,17 @@ function App() {
       <section className="section-card">
         <div className="directory-header">
           <div className="section-heading"><span className="section-icon"><Icon name="list" /></span><div><h2>Employee Directory</h2><p>Showing {filteredEmployees.length} of {employees.length} employees</p></div></div>
+
+          {/* Downloads the latest employee records from SQL Server. */}
+          <button
+            className="btn btn-primary"
+            type="button"
+            onClick={handleDownloadExcel}
+            disabled={isDownloading}
+          >
+            <Icon name="download" />
+            {isDownloading ? "Downloading..." : "Download Excel"}
+          </button>
 
           {/* Search bar for filtering employees. */}
           <div className="search-wrap"><Icon name="search" /><input className="search-input"

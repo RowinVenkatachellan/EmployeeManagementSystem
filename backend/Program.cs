@@ -1,6 +1,8 @@
 
 using backend.Data;
 using Microsoft.EntityFrameworkCore;
+using backend.Services;
+
 
 var builder = WebApplication.CreateBuilder(args);
 //Create an object used to configure application
@@ -29,6 +31,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     )
 );//When someone needs AppDbContext, create it with settings that tell EF Core to use our SQL Server database.
 
+builder.Services.AddScoped<EmployeeExcelService>();
 var app = builder.Build();
 
 // Compose enables this after SQL Server reports that it is ready.

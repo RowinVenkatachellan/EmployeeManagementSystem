@@ -50,3 +50,25 @@ The user confirmed that the application starts with Compose and that a newly add
 employee remains after stopping and restarting the containers. This is user-reported
 manual evidence, separate from the automated run above. Complete the full browser CRUD
 and validation checklist in the README before the final demonstration.
+
+## Docker React browser verification
+
+Verified on 25 October 2026 using headless Microsoft Edge against the running
+Docker frontend at `http://localhost:5173`, including its Nginx proxy, backend,
+and SQL Server database.
+
+| Browser check | Result |
+| --- | --- |
+| Empty full name blocked by browser required-field validation | Passed |
+| Malformed email blocked by browser email validation | Passed |
+| Employee created through React; API returns 201 and row appears | Passed |
+| Name, department, job title, and inactive status edited; API returns 204; changes remain after reload | Passed |
+| Duplicate email returns 409 and React displays the duplicate-email message | Passed |
+| Whitespace-only department returns 400 and React displays the required-field error | Passed |
+| Confirmed deletion returns 204; row absent after reload; GET by ID returns 404 | Passed |
+
+The check used a uniquely identified temporary employee and removed it afterward.
+Existing employee records were not edited or deleted. A local validation screenshot
+is available at `TestResults/docker-validation.png`; generated artifacts and the
+one-off browser script are ignored by Git. This browser run supplements the 28
+automated xUnit tests above.
